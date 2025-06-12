@@ -1,0 +1,60 @@
+version: 2
+updates:
+  # .NET dependencies in agent folder
+  - package-ecosystem: "nuget"
+    directory: "/agent"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "kvaes"
+    assignees:
+      - "kvaes"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    groups:
+      microsoft-extensions:
+        patterns:
+          - "Microsoft.Extensions.*"
+      semantic-kernel:
+        patterns:
+          - "Microsoft.SemanticKernel*"
+      serilog:
+        patterns:
+          - "Serilog*"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "kvaes"
+    assignees:
+      - "kvaes"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "kvaes"
+    assignees:
+      - "kvaes"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
