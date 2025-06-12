@@ -1,8 +1,11 @@
 using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
+using Agent.Functions;
 
 namespace Agent;
 
@@ -11,15 +14,18 @@ public class AgentService : IAgentService
     private readonly ILogger<AgentService> _logger;
     private readonly IConfiguration _configuration;
     private readonly Kernel _kernel;
+    private readonly IServiceProvider _serviceProvider;
 
     public AgentService(
         ILogger<AgentService> logger,
         IConfiguration configuration,
-        Kernel kernel)
+        Kernel kernel,
+        IServiceProvider serviceProvider)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
     public async Task InitializeAsync()
@@ -88,16 +94,69 @@ public class AgentService : IAgentService
         {
             _logger.LogInformation("Loading plugins");
             
-            // Plugin loading will be implemented here
-            // This will include loading all the API plugins for:
-            // - Connect API
-            // - MyNumbers APIs
-            // - SMS API
-            // etc.
+            // Load all API plugins
+            var httpClientFactory = _serviceProvider.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient();
             
-            await Task.CompletedTask; // Placeholder
+            // Connect API Plugin
+            var connectPlugin = new ConnectApiPlugin(httpClient, 
+                _serviceProvider.GetRequiredService<ILogger<ConnectApiPlugin>>(), 
+                _configuration);
+            _kernel.Plugins.AddFromObject(connectPlugin, "ConnectApi");
+            _logger.LogInformation("Loaded Connect API plugin");
+
+            // MyNumbers API Plugin
+            var myNumbersPlugin = new MyNumbersApiPlugin(httpClient,
+                _serviceProvider.GetRequiredService<ILogger<MyNumbersApiPlugin>>(),
+                _configuration);
+            _kernel.Plugins.AddFromObject(myNumbersPlugin, "MyNumbersApi");
+            _logger.LogInformation("Loaded MyNumbers API plugin");
+
+            // MyNumbers Address Management API Plugin
+            var addressMgmtPlugin = new MyNumbersAddressManagementApiPlugin(httpClient,
+                _serviceProvider.GetRequiredService<ILogger<MyNumbersAddressManagementApiPlugin>>(),
+                _configuration);
+            _kernel.Plugins.AddFromObject(addressMgmtPlugin, "MyNumbersAddressManagementApi");
+            _logger.LogInformation("Loaded MyNumbers Address Management API plugin");
+
+            // MyNumbers CDR API Plugin
+            var cdrPlugin = new MyNumbersCdrApiPlugin(httpClient,
+                _serviceProvider.GetRequiredService<ILogger<MyNumbersCdrApiPlugin>>(),
+                _configuration);
+            _kernel.Plugins.AddFromObject(cdrPlugin, "MyNumbersCdrApi");
+            _logger.LogInformation("Loaded MyNumbers CDR API plugin");
+
+            // MyNumbers Disconnection API Plugin
+            var disconnectionPlugin = new MyNumbersDisconnectionApiPlugin(httpClient,
+                _serviceProvider.GetRequiredService<ILogger<MyNumbersDisconnectionApiPlugin>>(),
+                _configuration);
+            _kernel.Plugins.AddFromObject(disconnectionPlugin, "MyNumbersDisconnectionApi");
+            _logger.LogInformation("Loaded MyNumbers Disconnection API plugin");
+
+            // MyNumbers Emergency Services API Plugin
+            var emergencyPlugin = new MyNumbersEmergencyServicesApiPlugin(httpClient,
+                _serviceProvider.GetRequiredService<ILogger<MyNumbersEmergencyServicesApiPlugin>>(),
+                _configuration);
+            _kernel.Plugins.AddFromObject(emergencyPlugin, "MyNumbersEmergencyServicesApi");
+            _logger.LogInformation("Loaded MyNumbers Emergency Services API plugin");
+
+            // MyNumbers Number Porting API Plugin
+            var portingPlugin = new MyNumbersNumberPortingApiPlugin(httpClient,
+                _serviceProvider.GetRequiredService<ILogger<MyNumbersNumberPortingApiPlugin>>(),
+                _configuration);
+            _kernel.Plugins.AddFromObject(portingPlugin, "MyNumbersNumberPortingApi");
+            _logger.LogInformation("Loaded MyNumbers Number Porting API plugin");
+
+            // SMS API Plugin
+            var smsPlugin = new SmsApiPlugin(httpClient,
+                _serviceProvider.GetRequiredService<ILogger<SmsApiPlugin>>(),
+                _configuration);
+            _kernel.Plugins.AddFromObject(smsPlugin, "SmsApi");
+            _logger.LogInformation("Loaded SMS API plugin");
             
-            _logger.LogInformation("Plugins loaded successfully");
+            await Task.CompletedTask; // Placeholder for any async plugin initialization
+            
+            _logger.LogInformation("All plugins loaded successfully. Total plugins: {PluginCount}", _kernel.Plugins.Count);
         }
         catch (Exception ex)
         {
